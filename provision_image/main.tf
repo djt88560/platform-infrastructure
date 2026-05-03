@@ -36,7 +36,7 @@ data "aws_security_group" "default" {
 # -----------------------------
 
 resource "aws_ecs_cluster" "this" {
-  name = "demo-cluster-2"
+  name = "demo-cluster"
 }
 
 # -----------------------------
@@ -72,7 +72,7 @@ resource "aws_ecs_task_definition" "app" {
     aws_iam_role_policy_attachment.ecs_execution_policy
   ]
 
-  family                   = "demo-task"
+  family                   = "demo-task-2"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "256"
