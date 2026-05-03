@@ -36,7 +36,7 @@ data "aws_security_group" "default" {
 # -----------------------------
 
 resource "aws_ecs_cluster" "this" {
-  name = "demo-cluster"
+  name = "demo-cluster-2"
 }
 
 # -----------------------------
