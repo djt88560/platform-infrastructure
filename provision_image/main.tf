@@ -26,11 +26,24 @@ data "aws_subnets" "default" {
   }
 }
 
-data "aws_security_group" "default" {
-  name   = "default"
+resource "aws_security_group" "ecs_http" {
+  name   = "ecs-http"
   vpc_id = data.aws_vpc.default.id
-}
 
+  ingress {
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 # -----------------------------
 # ECS Cluster
 # -----------------------------
@@ -90,7 +103,8 @@ resource "aws_ecs_task_definition" "app" {
           containerPort = 8000
           protocol      = "tcp"
         }
-      ]
+      ]      
+  
     }
   ])
 }
@@ -108,7 +122,7 @@ resource "aws_ecs_service" "app" {
 
   network_configuration {
     subnets          = data.aws_subnets.default.ids
-    security_groups  = [data.aws_security_group.default.id]
+    security_groups  = [aws_security_group.ecs_http.id]
     assign_public_ip = true
   }
 }
