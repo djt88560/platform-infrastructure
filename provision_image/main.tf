@@ -26,13 +26,18 @@ data "aws_subnets" "default" {
   }
 }
 
-resource "aws_security_group" "ecs_http" {
-  name   = "ecs-http"
+# -----------------------------
+# Security Groups
+# -----------------------------
+
+# ALB security group
+resource "aws_security_group" "alb_http" {
+  name   = "alb-http"
   vpc_id = data.aws_vpc.default.id
 
   ingress {
-    from_port   = 8000
-    to_port     = 8000
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -44,11 +49,67 @@ resource "aws_security_group" "ecs_http" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+# ECS task security group
+resource "aws_security_group" "ecs_http" {
+  name   = "ecs-http"
+  vpc_id = data.aws_vpc.default.id
+
+  ingress {
+    from_port                = 8000
+    to_port                  = 8000
+    protocol                 = "tcp"
+    security_groups          = [aws_security_group.alb_http.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# -----------------------------
+# Application Load Balancer
+# -----------------------------
+
+resource "aws_lb" "alb" {
+  name               = "demo-alb"
+  load_balancer_type = "application"
+  subnets            = data.aws_subnets.default.ids
+  security_groups    = [aws_security_group.alb_http.id]
+}
+
+resource "aws_lb_target_group" "app" {
+  name        = "demo-tg"
+  port        = 8000
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = data.aws_vpc.default.id
+
+  health_check {
+    path    = "/health"
+    matcher = "200"
+  }
+}
+
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app.arn
+  }
+}
+
 # -----------------------------
 # ECS Cluster
 # -----------------------------
 
-resource "aws_ecs_cluster" "this" {
+resource "aws_ecs_cluster" "cluster" {
   name = "demo-cluster"
 }
 
@@ -81,11 +142,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
 # -----------------------------
 
 resource "aws_ecs_task_definition" "app" {
-  depends_on = [
-    aws_iam_role_policy_attachment.ecs_execution_policy
-  ]
-
-  family                   = "demo-task-2"
+  family                   = "demo-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "256"
@@ -103,8 +160,7 @@ resource "aws_ecs_task_definition" "app" {
           containerPort = 8000
           protocol      = "tcp"
         }
-      ]      
-  
+      ]
     }
   ])
 }
@@ -115,7 +171,7 @@ resource "aws_ecs_task_definition" "app" {
 
 resource "aws_ecs_service" "app" {
   name            = "demo-service"
-  cluster         = aws_ecs_cluster.this.id
+  cluster         = aws_ecs_cluster.cluster.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
   launch_type     = "FARGATE"
@@ -125,4 +181,12 @@ resource "aws_ecs_service" "app" {
     security_groups  = [aws_security_group.ecs_http.id]
     assign_public_ip = true
   }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.app.arn
+    container_name   = "app"
+    container_port   = 8000
+  }
+
+  depends_on = [aws_lb_listener.http]
 }
