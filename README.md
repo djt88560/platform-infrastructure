@@ -12,3 +12,9 @@ A sibling repository to service-template. This repo should provide the functiona
 - initialise and apply terraform with your image
 - go on to ecs on aws and find your cluster (make sure you are in the us-east-1 region)
 - terraform destroy with the image name when you are done
+
+
+# Load Balancer
+I have added a load balancer to give a single stable entrypoint to the app via DNS
+Before, I had to ask for the correct ip and port, and the ip could change if the app crashes
+Go to EC2-Load Balancers to find the DNS namae
