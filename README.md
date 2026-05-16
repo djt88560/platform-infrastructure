@@ -18,3 +18,6 @@ A sibling repository to service-template. This repo should provide the functiona
 I have added a load balancer to give a single stable entrypoint to the app via DNS
 Before, I had to ask for the correct ip and port, and the ip could change if the app crashes
 Go to EC2-Load Balancers to find the DNS namae
+
+# Creating an s3 bucket on aws for destroying resources
+- When creating a gha workflow to destroy the infrastructure, it must read from the terraform state file. This file must therefore be available remotely to be updated by and accessed from both workflows. Therefore an S3 bucket must be created. This can be achieved on aws by searching for "S3" and selecting "create bucket"
