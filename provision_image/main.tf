@@ -153,6 +153,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
 # -----------------------------
 
 resource "aws_ecs_task_definition" "app" {
+  depends_on = [aws_cloudwatch_log_group.ecs_app]
   family                   = "demo-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -177,7 +178,7 @@ resource "aws_ecs_task_definition" "app" {
       logConfiguration = {
           logDriver = "awslogs"
           options = {
-            awslogs-group = "ecs/app"
+            awslogs-group = aws_cloudwatch_log_group.ecs_app.name
             awslogs-region = "us-east-1"
             awslogs-stream-prefix = "ecs"
           }
@@ -210,4 +211,13 @@ resource "aws_ecs_service" "app" {
   }
 
   depends_on = [aws_lb_listener.http]
+}
+
+# -----------------------------
+  # Log Group
+# -----------------------------
+
+resource "aws_cloudwatch_log_group" "ecs_app" {
+  name              = "ecs/app"
+  retention_in_days = 7
 }
