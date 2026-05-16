@@ -1,4 +1,9 @@
 terraform {
+  backend "s3" {
+    bucket = "devops-project-tfstate-bucket-365916940852-us-east-1-an"
+    key = "provision_image.tfstate"
+    region = "us-east-1"
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -111,6 +116,12 @@ resource "aws_lb_listener" "http" {
 
 resource "aws_ecs_cluster" "cluster" {
   name = "demo-cluster"
+  
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+
 }
 
 # -----------------------------
@@ -162,7 +173,7 @@ resource "aws_ecs_task_definition" "app" {
           protocol      = "tcp"
         }
       ]
-      
+
       logConfiguration = {
           logDriver = "awslogs"
           options = {
