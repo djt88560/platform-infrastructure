@@ -21,3 +21,6 @@ Go to EC2-Load Balancers to find the DNS namae
 
 # Creating an s3 bucket on aws for destroying resources
 - When creating a gha workflow to destroy the infrastructure, it must read from the terraform state file. This file must therefore be available remotely to be updated by and accessed from both workflows. Therefore an S3 bucket must be created. This can be achieved on aws by searching for "S3" and selecting "create bucket"
+
+# Logging
+- logging is written in the app and is displayed in Cloudwatch on aws. Go to Cloudwatch - log management - ecs/app to see the logs. Try executing the statement endpoint and see the log appear
